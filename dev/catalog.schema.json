@@ -1,0 +1,12 @@
+{
+	"$schema": "https://mahmoud1205.github.io/dev/catalog.schema.json",
+	"version": 1,
+	"schemas": [
+		{
+			"name": ".zlv schema",
+			"description": "Level information file used by Zombies game.",
+			"fileMatch": ["*.zlv"],
+			"url": "https://mahmoud1205.github.io/dev/zlv.schema.json"
+		}
+	]
+}
