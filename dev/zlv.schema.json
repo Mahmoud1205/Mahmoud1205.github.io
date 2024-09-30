@@ -1,0 +1,34 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": ".zlv (Zombie Level) schema",
+	"description": "Schema for thr .zlv file format used by the Zombies game.",
+	"type": "object",
+	"properties": {
+		"name": {
+			"type": "string",
+			"title": "Level name",
+			"description": "The name of the level shown to the user."
+		},
+		"game": {
+			"name": "Game information",
+			"description": "Information used by the game code.",
+			"model_path": {
+				"type": "string",
+				"name": "Model path",
+				"description": "The path to the level's 3D model to be imported into the game."
+			},
+			"player_spawn": {
+				"type": "array",
+				"items": {
+					"type": "string"
+				},
+				"minItems": 3,
+				"maxItems": 3,
+				"name": "Player Spawn",
+				"description": "The player's spawn point."
+			},
+			"required": ["model_path", "player_spawn"]
+		}
+	},
+	"required": ["name", "game"]
+}
