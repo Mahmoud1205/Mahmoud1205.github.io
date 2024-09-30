@@ -10,6 +10,7 @@
 			"description": "The name of the level shown to the user."
 		},
 		"game": {
+			"type": "object",
 			"name": "Game information",
 			"description": "Information used by the game code.",
 			"model_path": {
@@ -20,7 +21,7 @@
 			"player_spawn": {
 				"type": "array",
 				"items": {
-					"type": "string"
+					"type": "integer"
 				},
 				"minItems": 3,
 				"maxItems": 3,
@@ -28,7 +29,30 @@
 				"description": "The player's spawn point."
 			},
 			"required": ["model_path", "player_spawn"]
+		},
+		"physics": {
+			"type": "object",
+			"name": "Physics information",
+			"description": "Information used by the Jolt Physics engine.",
+			"shape": {
+				"type": "string",
+				"enum": ["static_compound_shape_mesh", "static_compound_shape_aabb", "static_compound_shape_obb", "null"],
+				"name": "Physics body shape",
+				"description": "The shape of the physics body that represents the level's model. Options are static_compound_shape_aabb where each mesh is an AABB, static_compound_shape_obb is similar but with OBB, static_compound_shape_mesh imports each mesh as a mesh, null does not import this level into the physics system. Use static_compound_shape_mesh if confused."
+			},
+			"bodies": {
+				"type": "array",
+				"items": {
+					"type": "object",
+					"properties": {
+						"TODO": "TODO"
+					}
+				},
+				"name": "Physics Bodies",
+				"description": "A list of the physics bodies to add to the scene."
+			},
+			"required": ["shape"]
 		}
 	},
-	"required": ["name", "game"]
+	"required": ["name", "game", "physics"]
 }
