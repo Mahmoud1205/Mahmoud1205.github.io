@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!--
+	TODO:
+	- add a confirmation dialog before closing the window
+-->
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Mahmoud</title>
+	<link rel="stylesheet" href="https://unpkg.com/7.css">
+	<!-- <link rel="stylesheet" href="https://unpkg.com/xp.css"> -->
+
+	<style>
+		html, body {
+			margin: 0;
+			height: 100%;
+		}
+
+		.window {
+			margin: 16px;
+		}
+
+		.background {
+			background-image: url('/assets/img/bg.jpg');
+			background-size: cover;
+			background-position: center;
+			background-repeat: no-repeat;
+			min-height: 100vh;
+
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+</head>
+<body>
+	<div class="background">
+		<div class="window glass active" style="max-width: 100%;">
+			<div class="title-bar">
+				<div class="title-bar-text">Mahmoud's Portfolio</div>
+				<div class="title-bar-controls">
+					<!-- <button aria-label="Help"></button> -->
+					<button aria-label="Minimize" disabled></button>
+					<button aria-label="Maximize" disabled></button>
+					<button aria-label="Close" onclick="window.location.href = 'https://www.google.com/'"></button>
+				</div>
+			</div>
+			<div class="window-body has-space">
+				{{ content }}
+			</div>
+
+			<div class="status-bar">
+				<p class="status-bar-field">Name: Mahmoud</p>
+				<p class="status-bar-field">Age: 16</p>
+				<p class="status-bar-field">Nationality: Egypt</p>
+				<p class="status-bar-field">Current Project: An infinite runner game for the PSP.</p>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		document.addEventListener("DOMContentLoaded", () => {
+			const tabs = document.querySelectorAll('[role="tab"]');
+			const tabPanels = document.querySelectorAll('[role="tabpanel"]');
+
+			tabs.forEach(tab => {
+				tab.addEventListener("click", () => {
+					// Unselect all tabs
+					tabs.forEach(t => t.setAttribute("aria-selected", "false"));
+					// Hide all panels
+					tabPanels.forEach(panel => panel.hidden = true);
+
+					// Select clicked tab
+					tab.setAttribute("aria-selected", "true");
+					// Show related panel
+					const targetPanel = document.getElementById(tab.getAttribute("aria-controls"));
+					targetPanel.hidden = false;
+				});
+			});
+		});
+	</script>
+</body>
+</html>
