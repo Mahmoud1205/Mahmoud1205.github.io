@@ -25,9 +25,9 @@ title: Home
 	{% for post in site.posts %}
 		<fieldset>
 			<legend>{{ post.title }}</legend>
+			<button onclick="location.href = '{{ post.url }}'">View Post</button>
+			<p>{{ post.date | date: "%B %d, %Y" }}</p>
 		</fieldset>
-		<button onclick="location.href = '{{ post.url }}'">View Post</button>
-		<p>{{ post.date | date: "%B %d, %Y" }}</p>
 	{% endfor %}
 </article>
 
