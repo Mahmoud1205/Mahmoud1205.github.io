@@ -1,1 +1,7 @@
 tmp
+Gemfile
+Gemfile.lock
+.jekyll-metadata
+.jekyll-cache
+_site
+_LearnC

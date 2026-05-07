@@ -1,0 +1,384 @@
+---
+layout: default
+title: PSP Profiling in C
+summary: Getting an instrumented profiler like Tracy to run on a PSP was unrealistic, so I made my own.
+date: 2025-09-06
+tags: [profiling, psp, c]
+---
+
+{% include post-header.html %}
+
+<div class="blog-post-content">
+<p>
+While making my infinite runner game for the PSP, I needed a profiling tool. Initially, I considered Tracy which I use for my PC projects.
+But using it was not possible for the following reasons,
+<ul>
+	<li>It was made for specific platforms, and the PSP is not one of them.</li>
+	<li>It uses multithreading for efficient profiling, and the PSP is single-threaded<sup>1</sup>.</li>
+	<li>It uses networking code to report profiling data which is difficult to port to PSP<sup>2</sup>.</li>
+</ul>
+
+<blockquote>
+	1) The PSP's CPU only has one core, but it supports preemptive multithreading.
+	<br>
+	2) The PSP has a custom API for networking.
+</blockquote>
+
+I decided to write my own instrumented profiler using <a href="https://technology.riotgames.com/news/profiling-measurement-and-analysis">this article</a> as a reference.
+The profiler can export to <a href="https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview?tab=t.0">Chrome Tracing</a> file format.
+<br>
+
+<fieldset>
+	<img src="/assets/img/psp_profiler.png">
+	<legend><h3>View of the profiler result</h3></legend>
+</fieldset>
+
+The first problem I faced is that in C++, I would normally do this to profile a code block (contrived example):
+<pre><code class="language-cpp">
+// where ProfileEvent is a class with a constructor that saves the current
+// time and a destructor that calculates the elapsed time and writes it to
+// the profiler result.
+#define PROFILE(inEventName) ProfileEvent CONCAT(__pevt_, __LINE__)
+
+void GameUpdate()
+{
+	PROFILE("Game Update");
+
+	{
+		PROFILE("Physics Update");
+		Physics::Update(deltaTime);
+	}
+
+	{
+		PROFILE("AI Update");
+		for (U32 i = 0; i < botCount; i++)
+		{
+			PROFILE("Update Bot");
+			Bot* bot = &bots[i];
+			bot->Update(deltaTime, playerData);
+		}
+	}
+
+	[...etc]
+}
+</code></pre>
+But this project is in C which doesn't have constructors and destructors, not C++.
+<br>
+I first considered dropping the automatic block profiling feature and writing code like this:
+<pre><code class="language-c">
+// where profileStart and profileEnd correspond to the constructor and
+// destructor of ProfileEvent respectively.
+
+void GameUpdate()
+{
+	profileStart("Game Update");
+
+	profileStart("Physics Update");
+	PhysicsUpdate(deltaTime);
+	profileEnd("Physics Update");
+
+	profileStart("AI Update");
+	for (U32 i = 0; i < botCount; i++)
+	{
+		profileStart("Update Bot");
+		Bot* bot = &bots[i];
+		botUpdate(bot, deltaTime, playerData);
+		profileEnd("Update Bot");
+	}
+	profileEnd("AI Update");
+
+	profileEnd("Game Update");
+
+	[...etc]
+}
+</code></pre>
+
+Manual <code>profileStart()</code>/<code>profileEnd()</code> calls are error-prone and difficult to write code for. So I wanted a better solution.
+<br><br>
+
+So I used C macro tricks and <a href="https://gcc.gnu.org/onlinedocs/gcc/Common-Variable-Attributes.html#index-cleanup-variable-attribute">GCC's cleanup attribute extension</a> to emulate the behavior of the C++ code.
+
+<h3>First attempt using fprintf (too slow...)</h3>
+<pre><code class="language-c">
+/// @file profiler.h
+
+__ProfilerEvent_ __startEvt_(const char* inEvtName)
+{
+	__ProfilerEvent_ evt = {
+		.startTime = getCurrentTime(),
+		.name = inEvtName
+	};
+
+	// example output:
+	// { "name": "Frame", "ph": "B", "ts": 1000 }
+	// where "ph" is either B for Begin or E for End
+	fprintf(gTraceFile,
+		"{ \"name\": \"%s\", \"ph\": \"B\", \"ts\": %llu },",
+		evt.name, evt.startTime
+	);
+
+	return evt;
+}
+
+void __endEvt_(void* ioEvt)
+{
+	U64 endTime = getCurrentTime();
+
+	__ProfilerEvent_* evt = (__ProfilerEvent*)ioEvt;
+
+	fprintf(gTraceFile,
+		"{ \"name\": \"%s\", \"ph\": \"E\", \"ts\": %llu }",
+		evt->name,
+		endTime - evt->startTime
+	);
+}
+
+/// @brief Automatic profile macro. Can be used like lock guard in C++.
+#define PROFILE(inEvtName)												\
+	__attribute__((cleanup(__endEvt_)))									\
+	__ProfilerEvent_ CONCAT(__pevt_, __LINE__) = __startEvt_(inEvtName)
+</code></pre>
+
+Although this code worked, and it exported to <a href="https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview?tab=t.0">Chrome Tracing</a> directly,
+calling <code>fprintf</code> twice per event was very expensive.
+This made profiling very slow and this was noticeable in the output traces as large gaps between events.
+At some times, these gaps were bigger than the actual events!
+
+<br>
+
+<h3>Second attempt using binary format (faster but still too slow...)</h3>
+
+To solve this I decided to switch to a binary format with a queue of events in memory to avoid writing to disk twice per event, changing the code to:
+<pre><code class="language-c">
+/// @file profiler.c
+
+#define PROF_EVT_QUEUE_MAX_SIZE SIZE_KB(12)
+#define MAX_EVT_NAME_LEN 32
+
+typedef struct
+{
+	U64 time;
+	B8 isEnd;
+} Event;
+
+const U32 kEventSizeNoPadding = sizeof(U64) + sizeof(B8);
+
+Event*	gCurEvt = NULL;
+U8*		gEvtQueue = NULL;
+U32* 	gEvtQueueTop = NULL;
+
+__ProfilerEvent_ __startEvt_(const char* inEvtName)
+{
+	gCurEvt->time = getCurrentTime();
+	gCurEvt->isEnd = false;
+
+	if (*gEvtQueueTop + kEventSizeNoPadding + MAX_EVT_NAME_LEN > PROF_EVT_QUEUE_MAX_SIZE)
+	{
+		eprintf("Warn: The profiler queue overflowed. Consider increasing its size. (Queue Top: %u)\n", *gEvtQueueTop);
+		profFlushBuffer();
+	}
+
+	[..push event data and name to event queue]
+
+	return (__ProfilerEvent_) { .name = inEvtName, .start = gCurEvt->time };
+}
+
+void __endEvt_(void* ioEvt)
+{
+	__ProfilerEvent_* evt = ioEvt;
+
+	[...the same as __startEvt_ but gCurEvt->isEnd = true]
+}
+
+void profFlushBuffer()
+{
+	fwrite(gEvtQueue, 1, *gEvtQueueTop, gTraceFile);
+	*gEvtQueueTop = 0;
+	fflush(gTraceFile);
+}
+</code></pre>
+A complementary file was written to convert from this format to Chrome Tracing. This is runs on the computer after the PSP finishes profiling.
+<br><br>
+
+This was much faster, but still too slow..
+<ol>
+	<li>Event names are copied twice per each profiler event, this gets worse as the event names get longer. And it's highly redundant; event names are repeated in the trace output.</li>
+	<li>Additionally, writing two events, begin and end, is unnecessary because Chrome Tracing format supports a <a href="https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview?tab=t.0#heading=h.lpfof2aylapb">Complete Event</a> type which is one event that represents two events.</li>
+	<li>These two problems together also limited the amount of events that can be stored in memory in one frame causing an excessive number of disk writes per frame when using many events.</li>
+</ol>
+
+<h3>Final attempt using event name IDs (fast enough!)</h3>
+
+So finally, I wrote a version of the profiler which has acceptable performance and addresses these problems.
+<br><br>
+I decided to register the event names at the program's start-up and link those names to unique IDs, which addressed first problem.
+<br>
+I also inlined the <code>__startEvt_</code> and <code>__endEvt_</code> and changed <code>getCurrentTime()</code> calls to return 32-bit timers instead of 64-bit because the profiler likely won't run for so long.
+<pre><code class="language-c">
+// limit number of registered name to 64 for simplicity, but this can be increased at any time
+#define PROF_MAX_REGISTERED_NAMES 64
+
+// full struct which will be written to the trace output file
+typedef struct
+{
+	U32 startTime;
+	U32 endTime;
+	U32 nameID; // notice the usage of nameID instead of a string
+} __ProfilerEvent_;
+
+// this function now only creates a __ProfilerEvent_ instance and returns it.
+// no memory or disk writing anymore!
+static inline __ProfilerEvent_ __startEvt_(U32 inNameID)
+{
+	return (__ProfilerEvent_) {
+		.startTime = getCurrentTime(),
+		.nameID = inNameID
+	};
+}
+
+static inline void __endEvt_(void* ioEvt)
+{
+	__ProfilerEvent_* evt = ioEvt;
+	
+	evt->endTime = getCurrentTime();
+
+	usize sizeAfterWriteEvent = (usize)((*gEvtQueueTop) * sizeof(__ProfilerEvent_)) + sizeof(__ProfilerEvent_);
+	if (sizeAfterWriteEvent > PROF_EVT_QUEUE_MAX_SIZE)
+	{
+		eprintf("Warn: The profiler queue overflowed. Consider increasing its size. (Queue Top: %u)\n", (*gEvtQueueTop) * sizeof(__ProfilerEvent_));
+		profFlushBuffer();
+	}
+
+	__ProfilerEvent_* evtInQueue = &gEvtQueue[*gEvtQueueTop];
+	(*gEvtQueueTop)++;
+
+	// only one copy of 12 bytes!
+	*evtInQueue = *evt;
+}
+</code></pre>
+
+<h3>Event names registration</h3>
+You might be wondering how event names were registered.
+In C++ this can be done using metaprogramming tricks, but I'm using C, not C++. So I learned about C's <a href="https://en.wikipedia.org/wiki/X_macro">X Macros</a>.
+<br>
+Each engine subsystem that wants to use the profiler defines an X list of the event names it wants to use.
+<br>
+Then the subsystem includes a special <code>profilerRegList.h</code> header which exposes to it a function to register the event names.
+<br>
+Finally, the subsystem calls this function (<code>registerProfilerEventNames()</code>) in it's start-up function and now it can use the profiler efficiently!
+<pre><code>
+// example of the renderer subsystem using the profiler
+
+#define EVT_LIST \
+	X(Draw_Model) \
+	X(Begin_Frame) \
+	X(End_Frame) \
+	X(Await_Cmd_List) \
+	X(Await_Vblank_And_Swap_Buffers) \
+	X(Animate_Model) \
+	X(Calc_Skinning_Mats) \
+	X(Do_Software_Skinning)
+#include "debug/profilerRegList.h"
+
+bool renderStartUp()
+{
+	[...renderer initialization code]
+
+	registerProfilerEventNames();
+	return true;
+}
+
+void renderBeginFrame()
+{
+	PROFILE(Begin_Frame);
+	[...]
+}
+
+void renderEndFrame()
+{
+	PROFILE(End_Frame);
+
+	{
+		PROFILE(Await_Cmd_List);
+		[...]
+	}
+
+	{
+		PROFILE(Await_Vblank_And_Swap_Buffers);
+		[...]
+	}
+}
+</code></pre>
+
+And for context, below is the <code>profilerRegList.h</code> header,
+<pre><code class="language-c">
+/**
+ * @file Include this file after you define the event names of your subsystem,
+ * then call registerProfilerEventNames in the entry point of your subsystem.
+ */
+
+#ifndef EVT_LIST
+	#error "Please define EVT_LIST before including 'profilerRegList.h'!"
+#endif
+
+#define X(inVarName) U32 CONCAT(EVT_, inVarName) = PROF_INVALID_ID;
+EVT_LIST
+#undef X
+
+// the function is static so that each subsystem can use it separately
+static void registerProfilerEventNames()
+{
+	#define X(inVarName) CONCAT(EVT_, inVarName) = profRegisterName(#inVarName);
+	EVT_LIST
+	#undef X
+}
+</code></pre>
+
+The <code>profiler.h</code> file was also changed to include:
+<pre><code class="language-c">
+U32 profRegisterName(const char* inName)
+{
+	if (gNumRegisteredNames + 1 > PROF_MAX_REGISTERED_NAMES)
+		return PROF_INVALID_ID;
+
+	U32 nameLenWithNullTerm = (U32)strlen(inName) + 1;
+
+	__ProfilerEvent_ registerNameEvt = {
+		.startTime = MAXU32, // MAXU32 signals to the chrome tracing converter to interpret this event as a name registration
+		.endTime = nameLenWithNullTerm, // the converter interprets endTime as the string length including null terminator
+		.nameID = gNumRegisteredNames
+	};
+
+	usize sizeAfterWriteEvent = (uptr)((*gEvtQueueTop) * sizeof(__ProfilerEvent_)) + sizeof(__ProfilerEvent_) + nameLenWithNullTerm;
+	if (sizeAfterWriteEvent > PROF_EVT_QUEUE_MAX_SIZE)
+		profFlushBuffer();
+
+	fwrite(&amp;registerNameEvt, sizeof(__ProfilerEvent_), 1, gTraceFile);
+	fwrite(inName, 1, nameLenWithNullTerm, gTraceFile);
+
+	gRegisteredNames[gNumRegisteredNames] = strdup(inName);
+	return gNumRegisteredNames++;
+}
+
+#define PROFILE(inNameID) \
+	__attribute__((cleanup(__endEvt_))) \
+	__ProfilerEvent_ CONCAT(__pevt_, __LINE__) = __startEvt_(CONCAT(EVT_, inNameID))
+</code></pre>
+
+<h3>Final result</h3>
+To further understand the impact of these optimizations,<br>
+The first version of the profiler with direct <code>fprintf</code> calls was completely unusable with a large amount of events.<br>
+In the second version, the frametime was 1110ms because the profiler temporary buffer was flushed multiple times per frame.<br>
+In the final optimized version, the frametime was 83ms<sup>*</sup> and the file size was reduced by more than 90%.
+
+<blockquote>
+	* 83ms is bad, but that was because <a href="/2025/09/06/Cache-Coherency-on-the-PSP">the skinning code at the time was very unoptimized</a>.
+	After optimizing the skinning code, the frametime with the profiler was very good: around 90 FPS.
+</blockquote>
+
+<h3>Conclusion</h3>
+Building this profiler was a big learning experience, not only a helpful tool for my PSP game. The X Macros I learned existed in C will help me a lot in the future.<br>
+The full source with instructions on how to easily integrate it into your projects is available on my GitHub [here](TODO: link).
+
+</p>
+</div>

@@ -1,0 +1,94 @@
+---
+layout: default
+title: Cache Coherency on the PSP
+summary: Skeletal animation was slow in my PSP game because of cache misses, so I fixed it by minimizing memory accesses in the animation loop.
+date: 2025-09-06
+tags: [optimization, psp, c, c++, assembly]
+---
+
+{% include post-header.html %}
+
+<div class="blog-post-content">
+<p>
+I was writing a skeletal animation system for the PSP (PlayStation Portable) and after I made it work I noticed that the framerate is very slow.
+I narrowed it down to my vertex skinning loop,
+<pre><code class="language-c">
+for (U32 j = 0; j < MODEL_JOINT_INFLUENCE; j++)
+{
+	if (inputVtx->jointIDs[j] == 0xFF)
+		continue;
+
+	UMatrix4 skinMat = { .fm = inModel->skel->skinningMatrices[inputVtx->jointIDs[j]] };
+
+	UMatrix4 transposed;
+	for (U32 c = 0; c < 4; c++)
+		for (U32 r = 0; r < 4; r++)
+			transposed.f[c][r] = skinMat.f[r][c];
+
+	Vector4 localPos = { inputVtx->pos.x, inputVtx->pos.y, inputVtx->pos.z, 1.0f };
+	vfpu_transform_vector(&transposed.fm, &localPos, &localPos);
+	vfpu_scale_vector(&localPos, &localPos, inputVtx->weights[j]);
+
+	outVtx->pos.x += localPos.x;
+	outVtx->pos.y += localPos.y;
+	outVtx->pos.z += localPos.z;
+}
+</code></pre>
+
+This code brought the frametime up to 38.5ms. When I removed the transposing loop, the animation breaks but the frametime is back to 15.9ms.
+<br>
+After some time, I noticed that this is because transposing the matrices causes many cache misses, and this loop runs 3 times (<code>MODEL_JOINT_INFLUENCE</code>) per vertex.
+<br>
+To solve this problem I tried<sup>1</sup>,
+<ul>
+	<li>Fixing the math. But I couldn't do it because at the time, I wasn't very good at linear algebra and matrices specifically.</li>
+	<li>Moving the matrix to the scratchpad (a memory region just as fast as L1 cache on the PSP) and transposing it there. But then the bottleneck became the memory copies between main RAM and the scratchpad.</li>
+	<li>Transposing the matrices on the VFPU (Vector Floating Point Unit, which is like SIMD but for the PSP). This worked.</li>
+</ul>
+
+<blockquote>
+	1) I noticed while writing this post that I also could've transposed the matrices outside of the vertex loop which would have fixed the performance problem, but I am glad I never thought of this because I wouldn't have experimented with the VFPU.
+</blockquote>
+
+I modified the <code>vfpu_transform_vector</code> function from libpspmath to use a column-major alias of the used VFPU matrix register,
+<pre><code class="language-mips">
+	# void vmMultMat4Vec4(const Matrix4* inMat4, const Vector4* inVec4, Vector4* ioVec4)
+	.global vmMultMat4Vec4
+vmMultMat4Vec4:
+	# load matrix into vfpu E000 (C0xx) register
+	lv.q		C000, 0($a0)		# inc by 16 = 4 floats * 4 bytes
+	lv.q		C010, 16($a0)
+	lv.q		C020, 32($a0)
+	lv.q		C030, 48($a0)
+
+	lv.q		C100, 0($a1)		# load input vector into C100 register
+	vtfm4.q		C110, E000, C100	# perform matrix-vector mult and store vec4 result in C110
+#	vtfm4.q		C110, M000, C100	# this is the original line from libpspmath which resulted in transposed matrices
+	sv.q		C110, 0($a2)		# store output C110 into ioVec4
+	jr			$ra					# jump to $ra (return address)
+	nop								# burn branch delay slot (mips-specific quirk)
+</code></pre>
+
+<blockquote>
+	The <code>E000</code> VFPU register is a column-major alias of the row-major <code>M000</code> matrix register.
+	<br>
+	The <code>Cxy0</code> register is a 4-component vector representing the y<sup>th</sup> column of the x<sup>th</sup> matrix.
+</blockquote>
+
+Then I changed my vertex loop to,
+<pre><code class="language-c">
+for (U32 j = 0; j < MODEL_JOINT_INFLUENCE; j++)
+{
+	[...]
+
+	Vector4 localPos = { inputVtx->pos.x, inputVtx->pos.y, inputVtx->pos.z, 1.0f };
+	vmMultMat4Vec4(&transposed.fm, &localPos, &localPos);
+	vfpu_scale_vector(&localPos, &localPos, inputVtx->weights[j]);
+
+	[...]
+}
+</code></pre>
+The only thing which changed from the original loop is replacing <code>vfpu_transform_vector</code> with <code>vmMultMat4Vec4</code> which transposes the matrices directly using the VFPU without any repeated memory accesses.
+And the frametime is now 15.9ms, same as when I removed the transpose code completely in the beginning of my debugging.
+</p>
+</div>

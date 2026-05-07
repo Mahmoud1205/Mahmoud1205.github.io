@@ -1,2 +1,8 @@
 title: Mahmoud's Portfolio
 description: Mahmoud's Portfolio
+
+permalink: pretty
+
+collections:
+  Projects:
+    output: true

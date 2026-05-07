@@ -1,12 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<!--
-	TODO:
-	- add a confirmation dialog before closing the window
-	- add a html link query to select the main window tab
--->
-
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,74 +8,173 @@
 	<link rel="stylesheet" href="https://unpkg.com/7.css">
 	<!-- <link rel="stylesheet" href="https://unpkg.com/xp.css"> -->
 
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/c.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cpp.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/mipsasm.min.js"></script>
+
 	<style>
+		html {
+			font-size: 85% !important;
+		}
+
+		body, .window {
+			font-size: 1em !important;
+		}
+
+		@font-face {
+			font-family: 'Tahoma';
+			src: url('/assets/font/Tahoma/windows-xp-tahoma.woff2') format('woff2');
+			font-weight: normal;
+			font-style: normal;
+		}
+
+		/* TODO: fix Tahoma font */
+		body, * {
+			/* font-family: 'Tahoma', Arial, Helvetica, sans-serif !important; */
+			/* font-size: 1.8rem; */
+		}
+
 		html, body {
 			margin: 0;
-			height: 100%;
+			padding: 0;
+			height: auto;
 		}
 
-		.window {
-			margin: 16px;
-		}
-
-		.background {
+		body {
 			background-image: url('/assets/img/bg.jpg');
 			background-size: cover;
 			background-position: center;
 			background-repeat: no-repeat;
-			min-height: 100vh;
+			background-attachment: fixed;
+		}
 
-			position: fixed;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;
+		article {
+			padding-top: 0 !important;
+		}
+
+		img, video {
+			max-width: 100%;
+			height: auto;
+			display: block;
+		}
+
+		.window {
+			max-width: 100%;
+			margin: 16px;
+			overflow: visible;
+		}
+
+		.window-body {
+			overflow: visible;
+		}
+
+		blockquote {
+			background-color: rgb(224, 224, 224);
+			border-left: 3px solid rgb(96, 96, 96);
+			padding: 10px 15px;
+			margin: 10px 0;
+		}
+
+		pre:focus, code:focus {
+			outline: none;
+		}
+
+		pre[class*="language-"] code {
+			/* display: block; */
+			border: none;
+		}
+
+		pre[class*="language-"] code:not(.code-inline){
+			margin-top: -1em; /* remove first-line blank */
+		}
+
+		pre {
+			padding: 8px;
+		}
+
+		code, pre {
+			font-family: "Consolas", "Courier New", monospace;
+			font-size: 12px;
+			overflow-x: auto;
+			white-space: pre;
+
+			tab-size: 4;
+			-moz-tab-size: 4;
+			-o-tab-size: 4;
+		}
+
+		.tab-arrow {
+			color: rgb(61, 61, 61);
+			font-family: monospace;
+			display: inline-block;
+			width: 1ch;
+		}
+
+		.hljs-comment {
+			color: #6a9955;
+			font-style: italic;
+		}
+		.hljs-keyword {
+			color: #569cd6;
+		}
+		.hljs-string {
+			color: #ce9178;
+		}
+		.hljs-number {
+			color: #b5cea8;
+		}
+		.hljs-function {
+			color: #dcdcaa;
 		}
 	</style>
 </head>
 <body>
-	<div class="background">
-		<div class="window glass active" style="max-width: 100%;">
-			<div class="title-bar">
-				<div class="title-bar-text">Mahmoud's Portfolio</div>
-				<div class="title-bar-controls">
-					<!-- <button aria-label="Help"></button> -->
-					<button aria-label="Minimize" disabled></button>
-					<button aria-label="Maximize" disabled></button>
-					<button aria-label="Close" onclick="window.location.href = 'https://www.google.com/'"></button>
-				</div>
+	<div class="window glass active" style="max-width: 100%;">
+		<div class="title-bar">
+			<div class="title-bar-text">Mahmoud's Portfolio</div>
+			<div class="title-bar-controls">
+				<!-- <button aria-label="Help"></button> -->
+				<button aria-label="Minimize" disabled></button>
+				<button aria-label="Maximize" disabled></button>
+				<button id="close-btn" aria-label="Close" disabled></button>
 			</div>
-			<div class="window-body has-space">
-				{{ content }}
-			</div>
+		</div>
+		<div class="window-body has-space has-scrollbar">
+			{{ content }}
+		</div>
 
-			<div class="status-bar">
-				<p class="status-bar-field">Name: Mahmoud</p>
-				<p class="status-bar-field">Age: 16</p>
-				<p class="status-bar-field">Nationality: Egypt</p>
-				<p class="status-bar-field">Current Project: An infinite runner game for the PSP.</p>
-			</div>
+		<div class="status-bar">
+			<p class="status-bar-field">Name: Mahmoud</p>
+			<p class="status-bar-field">Nationality: Egypt</p>
+			<p class="status-bar-field">Current Project: Athan Lamp</p>
 		</div>
 	</div>
 
 	<script>
+		hljs.highlightAll();
+
+		function getIsMainPage()
+		{
+			let params = new URLSearchParams(window.location.search);
+			let isMainPage = params.has("tab");
+			return isMainPage;
+		}
+
 		document.addEventListener("DOMContentLoaded", () => {
-			const tabs = document.querySelectorAll('[role="tab"]');
-			const tabPanels = document.querySelectorAll('[role="tabpanel"]');
+			const closeBtn = document.getElementById("close-btn");
 
-			tabs.forEach(tab => {
-				tab.addEventListener("click", () => {
-					// Unselect all tabs
-					tabs.forEach(t => t.setAttribute("aria-selected", "false"));
-					// Hide all panels
-					tabPanels.forEach(panel => panel.hidden = true);
+			let isMainPage = getIsMainPage();
+			if (!isMainPage)
+				closeBtn.disabled = false;
+			else
+				closeBtn.disabled = true;
 
-					// Select clicked tab
-					tab.setAttribute("aria-selected", "true");
-					// Show related panel
-					const targetPanel = document.getElementById(tab.getAttribute("aria-controls"));
-					targetPanel.hidden = false;
-				});
+			closeBtn.addEventListener("click", () => {
+				let isMainPage = getIsMainPage();
+				if (!isMainPage)
+					window.location.href = "/";
 			});
 		});
 	</script>

@@ -1,0 +1,32 @@
+<style>
+	.blog-post-header {
+		max-width: 570px;
+		padding: 8px;
+	}
+
+	.blog-post-header p {
+		margin: 0;
+	}
+
+	.blog-post-header h1 {
+		margin-bottom: 0;
+	}
+
+	.blog-post-header p, h1 {
+		margin: 2px;
+	}
+
+	.blog-post-content {
+		padding-left: 8px;
+		padding-right: 8px;
+		max-width: 570px;
+	}
+</style>
+
+<div class="blog-post-header">
+	<fieldset>
+		<legend><h1>{{ page.title }}</h1></legend>
+		<p>{{ page.date | date: "%B %d, %Y" }}</p>
+		<p>{{ page.summary }}</p>
+	</fieldset>
+</div>
