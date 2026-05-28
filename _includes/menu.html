@@ -1,0 +1,7 @@
+<menu role="tablist" aria-label="Window with Tabs">
+	<button role="tab" {% if page.active_tab == "home" %}aria-selected="true"{% endif %} onclick="location.href='/'">Home</button>
+	<button role="tab" {% if page.active_tab == "projects" %}aria-selected="true"{% endif %} onclick="location.href='/projects/'">Projects</button>
+	<button role="tab" {% if page.active_tab == "blog" %}aria-selected="true"{% endif %} onclick="location.href='/blog/'">Blog</button>
+	<button role="tab" onclick="window.open('https://github.com/Mahmoud1205', '_blank')" target="_blank">GitHub</button> <!-- TODO: add github logo next to this btn -->
+	<button role="tab" onclick="window.open('https://linkedin.com/in/mahmoud-walid-nouh', '_blank')" target="_blank">LinkedIn</button> <!-- TODO: add linkedin logo next to this btn -->
+</menu>

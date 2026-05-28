@@ -3,6 +3,15 @@ description: Mahmoud's Portfolio
 
 permalink: pretty
 
+# TODO: change when i get a new domain name. and also in robots.txt
+url: https://mahmoud1205.github.io
+
+plugins:
+  - jekyll-sitemap
+
+exclude:
+  - tmp
+
 collections:
   Projects:
     output: true

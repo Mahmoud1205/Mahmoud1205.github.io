@@ -4,16 +4,80 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Mahmoud</title>
-	<link rel="stylesheet" href="https://unpkg.com/7.css">
-	<!-- <link rel="stylesheet" href="https://unpkg.com/xp.css"> -->
+	<title>Mahmoud Nouh - Software Engineer</title>
 
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css">
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/c.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cpp.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/mipsasm.min.js"></script>
+	<!-- TODO: change to custom domain name when i get it -->
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "Person",
+		"name": "Mahmoud Nouh",
+		"url": "https://mahmoud1205.github.io",
+		"jobTitle": "Software Engineer",
+		"sameAs": [
+			"https://github.com/Mahmoud1205",
+			"https://linkedin.com/in/mahmoud-walid-nouh"
+		]
+	}
+	</script>
+
+	<meta name="theme-color" content="#FFFFFF" />
+
+	<meta name="robots" content="index, follow" />
+
+	<meta name="description"
+		content="Portfolio of Mahmoud Nouh, a software engineer and electronics enthusiast. Skilled in C/C++, graphics programming, web development, PCB design, and digital fabrication."/>
+
+	<meta name="author" content="Mahmoud Nouh" />
+
+	<meta property="og:title" content="Mahmoud Nouh - Software Engineer" />
+	<meta property="og:description"
+		content="Portfolio and blog showcasing projects, experience, and technical skills." />
+	<meta property="og:type" content="website" />
+	<!-- TODO: add image 1200x630 -->
+	<!-- <meta property="og:image" content="" /> -->
+
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content="Mahmoud Nouh - Software Engineer" />
+	<meta name="twitter:description"
+		content="Portfolio and blog showcasing projects, experience, and technical skills." />
+	<!-- TODO: add image -->
+	<!-- <meta name="twitter:image" content="" /> -->
+	
+	<!-- TODO: change to custom domain name when i get it -->
+	<meta property="og:url" content="https://mahmoud1205.github.io/" />
+	<link rel="canonical" href="https://mahmoud1205.github.io/">
+
+	<link rel="preconnect" href="https://unpkg.com">
+	<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+	<link rel="preconnect" href="https://cloud.umami.is">
+
+	<link rel="preload" href="https://unpkg.com/7.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+	<noscript><link rel="stylesheet" href="https://unpkg.com/7.css"></noscript>
+
+	<link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+	<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs2015.min.css"></noscript>
+
 	<script defer src="https://cloud.umami.is/script.js" data-website-id="24209251-10ae-4383-9224-6c6731632eca"></script>
+
+	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+	<!-- TODO: write code that only loads languages as needed -->
+	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/c.min.js"></script>
+	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cpp.min.js"></script>
+	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/mipsasm.min.js"></script>
+
+	<!-- TODO: use instead of preload -->
+	<!-- <script>
+	function loadHighlight() {
+		if (window.hljs)
+			return;
+
+		const script = document.createElement('script');
+		script.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js";
+		script.onload = () => hljs.highlightAll();
+		document.head.appendChild(script);
+	}
+	</script> -->
 
 	<style>
 		html {
@@ -129,6 +193,25 @@
 		.hljs-function {
 			color: #dcdcaa;
 		}
+
+		fieldset {
+			max-width: 700px;
+		}
+
+		fieldset .about-me {
+			padding-top: 0;
+			padding-bottom: 0;
+		}
+
+		fieldset p {
+			margin-top: 0;
+			margin-bottom: 0;
+		}
+
+		#contact-content {
+			max-width: 500px;
+			margin: 0 auto;
+		}
 	</style>
 </head>
 <body>
@@ -143,7 +226,10 @@
 			</div>
 		</div>
 		<div class="window-body has-space has-scrollbar">
+			<section class="tabs">
+			{% include menu.html %}
 			{{ content }}
+			</section>
 		</div>
 
 		<div class="status-bar">

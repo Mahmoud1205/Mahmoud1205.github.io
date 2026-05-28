@@ -1,42 +1,16 @@
 ---
 layout: default
 title: Home
+active_tab: home
 ---
 
 <!-- TODO: in both blog posts please link to their projects on github -->
 <!-- TODO: make a favicon -->
+<!-- TODO: some images are too big for their display size. make them smaller. maybe use cloudinary -->
+<!-- TODO: add alt tag to all images -->
+<!-- TODO: add llms.txt -->
 
-<menu role="tablist" aria-label="Window with Tabs">
-	<button role="tab" aria-controls="AboutMe" aria-selected="true">About Me</button>
-	<button role="tab" aria-controls="Projects">Projects</button>
-	<button role="tab" aria-controls="Blog">Blog</button>
-	<!-- <button role="tab" aria-controls="ContactMe">Contact Me</button> --> <!-- TODO: add -->
-	<button role="tab" aria-controls="GitHub">GitHub</button> <!-- TODO: add github logo next to this btn -->
-	<!-- TODO: add linkedin button with logo just like github -->
-</menu>
-
-<style>
-	fieldset {
-		max-width: 700px;
-	}
-
-	fieldset .about-me {
-		padding-top: 0;
-		padding-bottom: 0;
-	}
-
-	fieldset p {
-		margin-top: 0;
-		margin-bottom: 0;
-	}
-
-	#contact-content {
-		max-width: 500px;
-		margin: 0 auto;
-	}
-</style>
-
-<article role="tabpanel" id="AboutMe">
+<article role="tabpanel">
 	<h1 style="margin-bottom: 0;">About Me</h1>
 	
 	<fieldset class="about-me">
@@ -44,7 +18,7 @@ title: Home
 		<p>I'm a self-taught programmer and electronics enthusiast. I work primarily in C and C++, and I like staying close to the hardware and optimizing code. My work spans software, graphics, and hardware, which overlap a lot in my projects.</p>
 		<p>Some things I've built: an <a href="/Projects/psptrace/">instrumental profiler for the PSP (PlayStation Portable)</a> that outputs trace info at 4µs resolution, and a <a href="/Projects/OpenGL-Renderer/">modern OpenGL renderer</a> with deferred shading.</p>
 		<p>I'm currently working on the <a href="/Projects/Athan-Lamp/">Athan Lamp</a>, a completely custom house decoration in the shape of a mosque that also works as a lamp and an Athan source. This project is built completely from scratch, from the PCB design, to the PCB fabrication (using CNC machine), to the firmware running on it.</p>
-		<p>I document what I learn in the <a href="/?tab=Blog">Blog</a> tab, and track my projects in the <a href="/?tab=Projects">Projects</a> tab.</p>
+		<p>I document what I learn in the <a href="/blog/">Blog</a> tab, and track my projects in the <a href="/projects/">Projects</a> tab.</p>
 		<p>I'm currently accepting internships, freelance projects, contracts, and full-time opportunities. If something I've built interests you, reach me at <a href="mailto:mahmoudwalid1205@outlook.com">mahmoudwalid1205@outlook.com</a>.</p>
 	</fieldset>
 
@@ -108,34 +82,8 @@ title: Home
 	</fieldset>
 </article>
 
-<!-- TODO: add searching and filtering -->
-<!-- TODO: add comments -->
-<!-- TODO: add project thumbnails -->
-<article role="tabpanel" hidden id="Projects">
-	<h1>Projects</h1>
-	{% for project in site.Projects %}
-		<a href="{{ project.url }}">
-			<fieldset style="max-width: 570px !important;">
-				<legend><h3>{{ project.title }}</h3></legend>
-				<p style="margin-top: -12px; margin-bottom: 4px;">{{ project.desc }}</p>
-			</fieldset>
-		</a>
-	{% endfor %}
-</article>
-
-<article role="tabpanel" hidden id="Blog">
-	<h1>Blog</h1>
-	{% for post in site.posts %}
-		<a href="{{ post.url }}">
-			<fieldset style="max-width: 570px !important;">
-				<legend><h3>{{ post.title }} — {{ post.date | date: "%B %d, %Y" }}</h3></legend>
-				<p style="margin-top: -12px; margin-bottom: 4px;">{{ post.summary }}</p>
-			</fieldset>
-		</a>
-	{% endfor %}
-</article>
-
-<style>
+<!-- TODO: do this -->
+<!-- <style>
 	form {
 		display: flex;
 		flex-direction: column;
@@ -144,8 +92,7 @@ title: Home
 	}
 </style>
 
-<!-- TODO: do this -->
-<!-- <article role="tabpanel" hidden id="ContactMe">
+<article role="tabpanel" hidden id="ContactMe">
 	<div id="contact-content">
 		<h1>Contact Me</h1>
 
@@ -172,43 +119,3 @@ title: Home
 		</ul>
 	</div>
 </article> -->
-
-<script>
-	document.addEventListener("DOMContentLoaded", () => {
-		const tabs = document.querySelectorAll('[role="tab"]');
-		const tabPanels = document.querySelectorAll('[role="tabpanel"]');
-
-		tabs.forEach(tab => {
-			tab.addEventListener("click", () => {
-				tabs.forEach(t => t.setAttribute("aria-selected", "false"));
-				tabPanels.forEach(panel => panel.hidden = true);
-
-				const tabName = tab.getAttribute("aria-controls");
-				if (tabName == 'GitHub') {
-					window.location.href = 'https://github.com/Mahmoud1205';
-					return;
-				}
-
-				tab.setAttribute("aria-selected", "true");
-				const targetPanel = document.getElementById(tabName);
-
-				targetPanel.hidden = false;
-
-				// set html tab query to tab name
-				const url = new URL(window.location);
-				url.searchParams.set("tab", tabName);
-				window.history.pushState({}, '', url); // update url in browser
-			});
-		});
-
-		// set tab from url query
-
-		const initialUrl = new URL(window.location);
-		tabAriaControls = initialUrl.searchParams.get("tab");
-		if (!tabAriaControls)
-			tabAriaControls = "AboutMe";
-
-		const selectedTab = document.querySelector(`[aria-controls="${tabAriaControls}"]`);
-		selectedTab.click();
-	});
-</script>
