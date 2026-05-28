@@ -1,0 +1,25 @@
+---
+layout: default
+title: CNC Machine Trial and Error
+summary: Trial and error on the CNC machine for PCB fabrication. This is useful for beginners trying to fabricate PCBs on the CNC machine so they can save time by avoiding the mistakes I made.
+date: 2026-04-24
+tags: [hardware, cnc, pcb]
+---
+
+{% include post-header.html %}
+
+<!-- TODO: add more detail on which project this is about -->
+
+<div class="blog-post-content">
+<p>The PCB fabrication of one of my projects, which was my first time fabricating a PCB by myself using the CNC machine, failed many times for the following reasons,</p>
+<ul>
+	<li>Traces are too thin relative to the CNC's drill bit. The drill bit I used for traces is a 30 degree 0.3mm V-bit so in the first prototypes I sometimes used trace widthes of 0.3mm exactly and sometimes 0.2mm, but because of the CNC machine's runout these 0.3mm traces were eaten by the bit and were discontinuous. This was still sometimes a problem when I used 0.4mm traces so I learned that 0.5mm is the minimum trace width for stable results.</li>
+	<li>Annular rings are too small. This problem is the same as the last one but for annular rings in vias and through holes. In the beginning I used 0.35mm annular rings for vias and I still use them now but it's a little bit hard to solder them like this. So I learned that bigger annular rings than 0.35mm is better.</li>
+	<li>PCB is too unstable on the CNC bed. In the first attempts I used double face tape to stabilize the PCB on the CNC bed. This was good for the traces stage and the drills stage. But in the outline stage when the CNC drill cuts the shape of the PCB from the copper board the PCB sometimes moves during the CNC job and it ruins the alignment forever because it is nearly impossible to put the PCB back in the exactly original location by hand. I fixed this by stabilizing the PCB using nails in addition to the double face<sup>(see red circles in fig. 1)</sup>.</li>
+	<li>PCB layers are not aligned when flipping the PCB to mill the back layer. This PCB is double layer so to mill the back layer I remove the PCB from the CNC bed and flip it then reapply double face tape on the other side to mill the back side of the PCB. This was a problem because it is impossible to put the PCB in the same exact place by hand after flipping it. This caused the front and back layers to be misaligned which broke the vias and through holes. I first tried to cut the PCB outline first then flip the PCB while keeping it inside the empty copper board around it. This method was still not accurate because the drill bit I used for outline was 1.5mm and it was impossible to bring back the PCB to the center of the copper board with a 1.5mm empty space at each edge. The solution that worked was to put 2 extra nails inside the PCB which act as references and stabilizers when flipping the PCB <sup>(see green circles in fig. 1)</sup>, because if the nails are in the same place the PCB will also be in the same place. But if you try this solution yourself please remember to remove the nails inside the PCB cutout before milling the back layer because the CNC spindle could hit the nail which can damage the spindle or drill bit. This was going to happen with me but I was monitoring the CNC so I pressed the emergency stop button immediately.</li>
+</ul>
+
+<img src="https://github.com/Mahmoud1205/AthanLamp/raw/main/Media/pcb_nails.jpeg?raw=true" alt="Figure 1. PCB Nails">
+<p>Figure 1. PCB nails</p>
+
+</div>
