@@ -60,14 +60,13 @@
 
 	<script defer src="https://cloud.umami.is/script.js" data-website-id="24209251-10ae-4383-9224-6c6731632eca"></script>
 
-	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
 	<!-- TODO: write code that only loads languages as needed -->
 	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/c.min.js"></script>
 	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/cpp.min.js"></script>
 	<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/mipsasm.min.js"></script>
 
-	<!-- TODO: use instead of preload -->
-	<!-- <script>
+	<!-- TODO: only run when highlight is needed -->
+	<script>
 	function loadHighlight() {
 		if (window.hljs)
 			return;
@@ -77,7 +76,7 @@
 		script.onload = () => hljs.highlightAll();
 		document.head.appendChild(script);
 	}
-	</script> -->
+	</script>
 
 	<style>
 		html {
@@ -108,7 +107,7 @@
 		}
 
 		body {
-			background-image: url('/assets/img/bg.jpg');
+			background-image: url('/assets/img/bg.webp');
 			background-size: cover;
 			background-position: center;
 			background-repeat: no-repeat;
@@ -240,12 +239,12 @@
 	</div>
 
 	<script>
-		hljs.highlightAll();
+		loadHighlight();
 
 		function getIsMainPage()
 		{
-			let params = new URLSearchParams(window.location.search);
-			let isMainPage = params.has("tab");
+			let isMainPage = window.location.pathname == "/";
+			console.log(isMainPage);
 			return isMainPage;
 		}
 
