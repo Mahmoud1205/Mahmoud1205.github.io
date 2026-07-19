@@ -10,7 +10,7 @@ active_tab: blog
 		<a href="{{ post.url }}">
 			<fieldset style="max-width: 570px !important;">
 				<legend><h3>{{ post.title }} — {{ post.date | date: "%B %d, %Y" }}</h3></legend>
-				<p style="margin-top: -12px; margin-bottom: 4px;">{{ post.summary }}</p>
+				<p style="margin-top: -12px; margin-bottom: 4px;">{{ post.desc }}</p>
 			</fieldset>
 		</a>
 	{% endfor %}
