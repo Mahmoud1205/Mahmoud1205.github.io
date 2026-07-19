@@ -229,7 +229,9 @@
 		<div class="window-body has-space has-scrollbar">
 			<section class="tabs">
 			{% include menu.html %}
-			{{ content }}
+			<article role="tabpanel">
+				{{ content }}
+			</article>
 			</section>
 		</div>
 

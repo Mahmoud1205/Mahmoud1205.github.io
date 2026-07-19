@@ -1,9 +1,10 @@
 ---
 layout: default
 title: Cache Coherency on the PSP
-summary: Skeletal animation was slow in my PSP game because of cache misses, so I fixed it by minimizing memory accesses in the animation loop.
+desc: Skeletal animation was slow in my PSP game because of cache misses, so I fixed it by minimizing memory accesses in the animation loop.
 date: 2025-09-06
 tags: [optimization, psp, c, c++, assembly]
+active_tab: blog
 ---
 
 {% include post-header.html %}
@@ -51,6 +52,7 @@ To solve this problem I tried<sup>1</sup>,
 </blockquote>
 
 I modified the <code>vfpu_transform_vector</code> function from libpspmath to use a column-major alias of the used VFPU matrix register,
+<!-- TODO(URGENT): fix MIPS not formatting -->
 <pre><code class="language-mips">
 	# void vmMultMat4Vec4(const Matrix4* inMat4, const Vector4* inVec4, Vector4* ioVec4)
 	.global vmMultMat4Vec4

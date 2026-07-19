@@ -7,14 +7,12 @@ active_tab: projects
 <!-- TODO: add searching and filtering -->
 <!-- TODO: add comments -->
 <!-- TODO: add project thumbnails -->
-<article role="tabpanel">
-	<h1>Projects</h1>
-	{% for project in site.Projects %}
-		<a href="{{ project.url }}">
-			<fieldset style="max-width: 570px !important;">
-				<legend><h3>{{ project.title }}</h3></legend>
-				<p style="margin-top: -12px; margin-bottom: 4px;">{{ project.desc }}</p>
-			</fieldset>
-		</a>
-	{% endfor %}
-</article>
+<h1>Projects</h1>
+{% for project in site.Projects %}
+	<a href="{{ project.url }}">
+		<fieldset style="max-width: 570px !important;">
+			<legend><h3>{{ project.title }}</h3></legend>
+			<p style="margin-top: -12px; margin-bottom: 4px;">{{ project.desc }}</p>
+		</fieldset>
+	</a>
+{% endfor %}
