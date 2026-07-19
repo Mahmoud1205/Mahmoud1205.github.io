@@ -11,6 +11,7 @@ plugins:
 
 exclude:
   - tmp
+  - webp.bat
 
 collections:
   Projects:
